@@ -1,4 +1,4 @@
-﻿// ==UserScript==
+// ==UserScript==
 // @name          Flowghost Browser Extension
 // @namespace     http://www.sakai.duke.com
 // @require       http://d3js.org/d3.v3.min.js
@@ -173,7 +173,7 @@ function GetCellValues(className) {
       var newNode = {};
       newNode.tagnames = '';
 
-      // addTags(cells[titleIndex]);
+      addTags(cells[titleIndex]);
 
       var nameAndTags = cells[titleIndex].innerHTML.split('#');
       newNode.name = nameAndTags[0].trim();
@@ -221,8 +221,10 @@ function displayNodes() {
     return Math.sqrt(d.points_possible / totalPoints * maxNodeSize);
   }).text(function (d) {
     //return d.name+", "+d.points+"/"+d.points_possible;
-    return d.name.substring(0, 3) + '..'
+    // return d.name.substring(0, 5) + '..'
+    return d.name;
   });
+  /*
   node.append('text').attr('dx', function (d) {
     return Math.sqrt(d.points_possible / totalPoints * maxNodeSize);
   }).attr('dy', 10).text(function (d) {
@@ -230,6 +232,7 @@ function displayNodes() {
       return val;
     })
   });
+  */
   node.on('mouseover', showDetails).on('mouseout', hideDetails)
   function showDetails() {
     d3.select(this).select('path').style('stroke', 'black').style('stroke-width', 2)
@@ -238,12 +241,13 @@ function displayNodes() {
     })
     //d3.select(this).selectAll(function() { return this.getElementsByTagName("foreignObject"); }).style("opacity", 0.7).style("display","inline").style("z-index",300).html("<p></p>")
     d3.select(this).append('foreignObject').attr('width', 400).attr('height', 500).style('display', 'inline').append('xhtml:pre').style('background-color', 'purple').style('color', 'yellow').style('z-index', 3).append('xhtml:p').text(function (d) {
-      return 'name: ' + d.name + '\n' + 'points: ' + d.points + '/' + d.points_possible
+      return 'name: ' + (d.name + '\n' + 'points: ' + d.points + '/' + d.points_possible + '\n' + 'tags: ' + d.tagnames.split(',').join(', ').match(/.{1,40}/g).join('\n      '));
     })
   }
   function hideDetails() {
     d3.select(this).select('text').text(function (d) {
-      return d.name.substring(0, 3) + '..'
+      // return d.name.substring(0, 3) + '..'
+      return d.name;
     })
     d3.select(this).select('path').style('stroke', 'white').style('stroke-width', 0)
     d3.select(this).selectAll(function () {
