@@ -10,5 +10,5 @@ A Greasemonkey script that provides virtualization of student grades in Duke Sak
 
 ### For Chrome users
 
-1. Install [Tampermonkey](https://chrome.google.com/webstore/detail/tampermonkey/mchbmglgiiijnmpdhcbepaefgljhigdi?hl=en) extension
+1. Install [Tampermonkey](https://chrome.google.com/webstore/detail/dhdgffkkebhmkfjojejmpbldmpobfkfo) extension
 2. Install [FlowGhost script](https://github.com/yh117/FlowGhost-Browser-Extension/raw/master/FlowGhost_Browser_Extension.user.js)
