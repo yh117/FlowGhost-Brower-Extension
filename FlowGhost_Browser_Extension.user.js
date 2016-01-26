@@ -180,7 +180,7 @@ function GetCellValues() {
     var newNode = {};
     newNode.tagnames = '';
 
-    addTags(cells[titleIndex]);
+    // addTags(cells[titleIndex]);
 
     var nameAndTags = cells[titleIndex].innerHTML.split('#');
     newNode.name = nameAndTags[0].trim();
