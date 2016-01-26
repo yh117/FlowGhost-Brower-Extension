@@ -32,8 +32,7 @@ var operator;
 var nodesToDisplay = [];
 var tags = Object.create(null);
 
-GetCellValues('internal');
-GetCellValues('external');
+GetCellValues();
 
 var all = TAFFY(nodesToDisplay);
 // alert(JSON.stringify(all().get()));
@@ -43,9 +42,10 @@ var all = TAFFY(nodesToDisplay);
 // alert(JSON.stringify(nodesToDisplay));
 var width = 1100;
 var height = 500;
-var totalPoints = 0;
+// var totalPoints = 0;
+var totalSize = 0;
 for (var i = 0; i < nodesToDisplay.length; ++i) {
-  totalPoints += nodesToDisplay[i].points_possible;
+  totalSize += nodesToDisplay[i].mySize;
 }
 var maxNodeSize = 10000;
 var color = d3.scale.category10();
@@ -155,46 +155,78 @@ function addTags(titleCell) {
   }
 }
 
-function GetCellValues(className) {
+function GetCellValues() {
   var table = document.getElementsByClassName('listHier wideTable lines') [0];
   var headers = table.getElementsByTagName('th');
-  var titleIndex,
-  gradeIndex;
+  var titleIndex, gradeIndex, weightIndex;
   for (var c = 0; c < headers.length; c++) {
     if (headers[c].innerHTML.indexOf('Title') > - 1) titleIndex = c;
     if (headers[c].innerHTML.indexOf('Grade*') > - 1) gradeIndex = c;
+    if (headers[c].innerHTML.indexOf('Weight') > - 1) weightIndex = c;
   }
   if (typeof titleIndex === 'undefined' || typeof gradeIndex === 'undefined') return;
-  var rows = document.getElementsByClassName(className);
+  // var rows = document.getElementsByClassName(className);
+  var rows = $('.listHier > tbody > tr');
+  var weight = 1.0, nodes = [];
   for (var r = 0, n = rows.length; r < n; r++) {
-    if (rows[r].tagName === 'TR') {
-      var cells = rows[r].cells;
-      if (cells[gradeIndex].innerHTML.indexOf('/') === - 1) continue;
-      var newNode = {};
-      newNode.tagnames = '';
-
-      addTags(cells[titleIndex]);
-
-      var nameAndTags = cells[titleIndex].innerHTML.split('#');
-      newNode.name = nameAndTags[0].trim();
-      for (var i=1; i<nameAndTags.length; i++) {
-        var tag = nameAndTags[i].trim();
-        if (newNode.tagnames === '') newNode.tagnames = tag;
-        else newNode.tagnames = newNode.tagnames + ',' + tag;
-        if (!(tag in tags)) tags[tag] = true;
-      }
-      var twoPoints;
-      if (cells[gradeIndex].getElementsByTagName('span').length != 0) {
-        twoPoints = cells[gradeIndex].getElementsByTagName('span')[0].innerHTML.split('/');
-      }
-      else {
-        twoPoints = cells[gradeIndex].innerHTML.split('/');
-      }
-      newNode.points = parseInt(twoPoints[0]);
-      newNode.points_possible = parseInt(twoPoints[1]);
-      nodesToDisplay.push(newNode);
+    var cells = rows[r].cells;
+    if (rows[r].className === "") {
+      pushToNodesToDisplay(nodes);
+      weight = getWeight(weight, weightIndex, cells);
+      nodes = [];
+      continue;
     }
+    if (cells[gradeIndex].innerHTML.indexOf('/') === - 1) continue;
+    var newNode = {};
+    newNode.tagnames = '';
+
+    addTags(cells[titleIndex]);
+
+    var nameAndTags = cells[titleIndex].innerHTML.split('#');
+    newNode.name = nameAndTags[0].trim();
+    for (var i=1; i<nameAndTags.length; i++) {
+      var tag = nameAndTags[i].trim();
+      if (newNode.tagnames === '') newNode.tagnames = tag;
+      else newNode.tagnames = newNode.tagnames + ',' + tag;
+      if (!(tag in tags)) tags[tag] = true;
+    }
+    var twoPoints;
+    if (cells[gradeIndex].getElementsByTagName('span').length != 0) {
+      twoPoints = cells[gradeIndex].getElementsByTagName('span')[0].innerHTML.split('/');
+    }
+    else {
+      twoPoints = cells[gradeIndex].innerHTML.split('/');
+    }
+    newNode.points = parseInt(twoPoints[0]);
+    newNode.points_possible = parseInt(twoPoints[1]);
+    newNode.parentWeight = weight;
+    newNode.myWeight = getWeight('', weightIndex, cells);
+    nodes.push(newNode);
+    // nodesToDisplay.push(newNode);
   }
+  pushToNodesToDisplay(nodes);
+}
+
+function pushToNodesToDisplay(nodes) {
+  var n = nodes.length;
+  var totalPoints = 0;
+  for (var i=0; i<n; ++i) totalPoints += nodes[i].points_possible;
+  nodes.forEach(function(node) {
+    if (node.myWeight === '') {
+      node.mySize = node.points_possible * node.parentWeight / totalPoints;
+    }
+    else {
+      node.mySize = node.parentWeight * node.myWeight;
+    }
+    nodesToDisplay.push(node);
+  });
+}
+
+function getWeight(weight0, weightIndex, cells) {
+  if (typeof weightIndex === 'undefined') return weight0;
+  var weightStr = cells[weightIndex].innerHTML;
+  if (weightStr === "") return weight0;
+  return parseFloat(weightStr) / 100.0;
 }
 
 function displayNodes() {
@@ -212,13 +244,13 @@ function displayNodes() {
   node.append('path').attr('d', d3.svg.symbol().type(function (d) {
     return d3.svg.symbolTypes[0];
   }).size(function (d) {
-    return d.points_possible / totalPoints * maxNodeSize;
+    return d.mySize / totalSize * maxNodeSize;
   })).style('fill', function (d) {
     return scaleColor(d.points / d.points_possible);
   }).style('opacity', 1);
   //add details
   node.append('text').attr('dx', function (d) {
-    return Math.sqrt(d.points_possible / totalPoints * maxNodeSize);
+    return Math.sqrt(d.mySize / totalSize * maxNodeSize);
   }).text(function (d) {
     //return d.name+", "+d.points+"/"+d.points_possible;
     // return d.name.substring(0, 5) + '..'
@@ -241,7 +273,14 @@ function displayNodes() {
     })
     //d3.select(this).selectAll(function() { return this.getElementsByTagName("foreignObject"); }).style("opacity", 0.7).style("display","inline").style("z-index",300).html("<p></p>")
     d3.select(this).append('foreignObject').attr('width', 400).attr('height', 500).style('display', 'inline').append('xhtml:pre').style('background-color', 'purple').style('color', 'yellow').style('z-index', 3).append('xhtml:p').text(function (d) {
-      return 'name: ' + (d.name + '\n' + 'points: ' + d.points + '/' + d.points_possible + '\n' + 'tags: ' + d.tagnames.split(',').join(', ').match(/.{1,40}/g).join('\n      '));
+      var nameAndPoints = 'name: ' + d.name + '\n' + 'points: ' + d.points + '/' + d.points_possible;
+      if (d.tagnames) {
+        var tags = '\ntags: ' + (d.tagnames.split(',').join(', ')).match(/.{1,40}/g).join('\n      ');
+        return nameAndPoints + tags;
+      }
+      else {
+        return nameAndPoints;
+      }
     })
   }
   function hideDetails() {
