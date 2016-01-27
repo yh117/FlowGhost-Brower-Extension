@@ -192,10 +192,10 @@ function GetCellValues() {
     }
     var twoPoints;
     if (cells[gradeIndex].getElementsByTagName('span').length != 0) {
-      twoPoints = cells[gradeIndex].getElementsByTagName('span')[0].innerHTML.split('/');
+      twoPoints = cells[gradeIndex].getElementsByTagName('span')[0].innerHTML.replace(/[\(\)]/g, '').split('/');
     }
     else {
-      twoPoints = cells[gradeIndex].innerHTML.split('/');
+      twoPoints = cells[gradeIndex].innerHTML.replace(/[\(\)]/g, '').split('/');
     }
     newNode.points = parseInt(twoPoints[0]);
     newNode.points_possible = parseInt(twoPoints[1]);
